@@ -60,21 +60,3 @@ class BitStampMySql:
                 self.conn.commit()
         except Exception as e:
             print(f"Failed to create trade: {e}")
-
-if __name__ == "__main__":
-    test = BitStampMySql("192.168.0.150", "root", "Tikatika1", "bitstamp")
-    test.connect()
-    with test.conn.cursor() as c:
-        c.execute("SHOW DATABASES")
-        for x in c:
-            print(x)
-
-    with test.conn.cursor() as c:
-        c.execute("SHOW DATABASES")
-        for x in c:
-            print(x)
-
-    # ethusd, 1314800356388864, 1314800350928896, 0.51830845, 1017.52, 1609831155
-    trade_data = {"id": 222, "buy_order_id": 1314800356388864, "sell_order_id": 1314800350928896,
-                  "amount": 0.51830845, "price": 1017.52, "type": 0, "timestamp": 1609831155}
-    test.create_trade(trade_data, "ethusd")
