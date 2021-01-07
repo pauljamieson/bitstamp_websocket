@@ -34,6 +34,7 @@ import sys
 import os
 import getopt
 import json
+import time
 from websocket import create_connection
 from datetime import datetime
 import pandas as pd
@@ -69,17 +70,17 @@ VALID_OUTPUTS = ["console", "csv", "sql"]
 
 # Config file
 
-with open('config.json') as f:
-    config_file = json.loads(f.read())
+if os.path.exists('config.json'):
+    with open('config.json') as f:
+        config_file = json.loads(f.read())
 
-SQLHOST = config_file['sql_host']
-SQLUSER = config_file['sql_user']
-SQLPASSWD = config_file['sql_pass']
-SQLDB = config_file['sql_db']
+    SQLHOST = config_file['sql_host']
+    SQLUSER = config_file['sql_user']
+    SQLPASSWD = config_file['sql_pass']
+    SQLDB = config_file['sql_db']
 
 
 def main(channel, currency_pair, output):
-    first = True
     # loop to reconnect if connection lost
     while True:
         try:
@@ -87,7 +88,6 @@ def main(channel, currency_pair, output):
             ws = create_connection(URI)
             ws.settimeout(1)
 
-            first = True
             # Subscribe to a channel
             ws.send(make_subscribe_json(f"{channel}_{currency_pair}"))
 
@@ -99,9 +99,8 @@ def main(channel, currency_pair, output):
             print(f"ctrl-c pressed, halting program...")
             quit(0)
         except socket.gaierror:
-            if first:
-                print(f'Network connection is down, will retry when network connection is re-established.')
-                first = False;
+            print(f'Network connection is down, will retry when network connection is re-established.')
+            time.sleep(10)
 
         except Exception as e:
             print(f"ERROR: {type(e)} {e}")
@@ -140,7 +139,6 @@ def handle_trade(trade_data, currency, output):
     #           "microtimestamp": "1609777594772000", "id": 139 255 607, "amount": 0.064,
     #           "sell_order_id": 1314580969922560, "price_str": "30859.03", "type": 0, "price": 30859.03},
     #           "event": "trade", "channel": "live_trades_btcusd"}
-
     if output == VALID_OUTPUTS[0]:
         print(f"Trade data")
         print(f'    id: {trade_data["id"]}')
@@ -197,7 +195,7 @@ if __name__ == "__main__":
     # Set defaults
     channel = VALID_CHANNELS[0]
     currency_pair = VALID_PAIRS[0]
-    output = [VALID_OUTPUTS[0]]
+    output = VALID_OUTPUTS[0]
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "ho:c:p:", ["channel=", "pair=", "output=", "help"])
@@ -206,13 +204,13 @@ if __name__ == "__main__":
             f'bitstamp_websocket.py -h -c <channel> -p <currency_pair> --channel=<channel> --pair=<currency_pair> --help')
         sys.exit(2)
     for opt, arg in opts:
+        cmd_example = (f'bitstamp_websocket.py -h -c <channel> -p <currency_pair> -o <console, csv, or sql> '
+                       f'--channel=<channel> --pair=<currency_pair> --output <console, csv, or sql> --help')
         if opt == "-h":
-            print(f'bitstamp_websocket.py -h -c <channel> -p <currency_pair> --channel=<channel> --pair=<currency_pair>'
-                  f' --help')
+            print(cmd_example)
             sys.exit(0)
         elif opt == "--help":
-            print(f'bitstamp_websocket.py -h -c <channel> -p <currency_pair> --channel=<channel> --pair=<currency_pair>'
-                  f' --help')
+            print(cmd_example)
             print('')
             print(f'Valid channel names:')
             for channel in VALID_CHANNELS[:-1]:
@@ -236,8 +234,7 @@ if __name__ == "__main__":
             else:
                 print(f'Channel name not valid.  Use -h to see all valid channels.')
                 sys.exit(2)
-        elif opt in ("-o","--output"):
-
+        elif opt in ("-o", "--output"):
             if check_output(arg):
                 output = arg
                 # create db connection of output used
