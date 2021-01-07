@@ -1,0 +1,6 @@
+{
+  "sql_host":  "127.0.0.1",
+  "sql_user":  "PutYourDBUserHere",
+  "sql_pass":  "PutYourPassHere",
+  "sql_db": "bitstamp"
+}
