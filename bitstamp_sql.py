@@ -2,7 +2,7 @@
 # Filename       : bitstamp_websocket.py
 # Author         : Paul Jamieson
 # Created        : 01/06/2021
-# Edited         : 01/06/2021
+# Edited         : 01/13/2021
 # Python Version : 3.7.7
 # Purpose        : Perform CRUD operations for mysql database
 #
@@ -35,19 +35,43 @@ import mysql.connector
 
 class BitStampMySql:
     def __init__(self, host, user, password, database):
-        self.host = host
-        self.user = user
-        self.password = password
-        self.database = database
-        self.conn = None
-
-    def connect(self):
         self.conn = mysql.connector.connect(
-            host=self.host,
-            user=self.user,
-            password=self.password,
-            database=self.database
+            host=host,
+            user=user,
+            password=password,
+            database=database
         )
+
+    def create_watcher(self, name, channel, currency_pair):
+        try:
+            with self.conn.cursor() as cursor:
+                sql = f'INSERT INTO watchers (name, channel, currency_pair) VALUES (%s, %s, %s)'
+                values = (name, channel, currency_pair)
+                cursor.execute(sql, values)
+                self.conn.commit()
+        except Exception as e:
+            print(f'Failed to create watcher entry({e}).')
+
+    def delete_watcher(self, name):
+        try:
+            with self.conn.cursor() as cursor:
+                sql = f'DELETE FROM watchers WHERE name = %s'
+                values = (name,)
+                cursor.execute(sql, values)
+                self.conn.commit()
+        except Exception as e:
+            print(f'Failed to delete watcher entry({e}).')
+
+    def list_watchers(self):
+        try:
+            with self.conn.cursor() as cursor:
+                sql = f'SELECT * FROM watchers'
+                cursor.execute(sql)
+                results = cursor.fetchall()
+                return results
+        except Exception as e:
+            print(f'Failed to delete watcher entry({e}).')
+            return "Failed to list watchers."
 
     def create_trade(self, trade_data, table):
         try:
@@ -60,3 +84,4 @@ class BitStampMySql:
                 self.conn.commit()
         except Exception as e:
             print(f"Failed to create trade: {e}")
+

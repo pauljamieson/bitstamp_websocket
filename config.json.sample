@@ -3,4 +3,5 @@
   "sql_user":  "PutYourDBUserHere",
   "sql_pass":  "PutYourPassHere",
   "sql_db": "bitstamp"
+  "watchers": ["ethusd", "btcusd"]
 }
