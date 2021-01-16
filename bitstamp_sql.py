@@ -45,11 +45,12 @@ class BitStampMySql:
     def create_watcher(self, name, channel, currency_pair):
         try:
             with self.conn.cursor() as cursor:
-                sql = f'INSERT INTO watchers (name, channel, currency_pair) VALUES (%s, %s, %s)'
+                sql = f'INSERT IGNORE INTO watchers (name, channel, currency_pair) VALUES (%s, %s, %s)'
                 values = (name, channel, currency_pair)
                 cursor.execute(sql, values)
                 self.conn.commit()
         except Exception as e:
+            self.conn.rollback()
             print(f'Failed to create watcher entry({e}).')
 
     def delete_watcher(self, name):

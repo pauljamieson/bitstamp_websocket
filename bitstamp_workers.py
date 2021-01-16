@@ -2,7 +2,7 @@
 # Filename       : bitstamp_workers.py
 # Author         : Paul Jamieson
 # Created        : 01/12/2021
-# Edited         : 01/13/2021
+# Edited         : 01/16/2021
 # Python Version : 3.7.7
 # Purpose        : Threads to run workers created by web api
 #
@@ -72,6 +72,26 @@ if os.path.exists('config.json'):
     SQLDB = config_file['sql_db']
 
 
+def start_all_watchers():
+    db_conn = SQL(SQLHOST, SQLUSER, SQLPASSWD, SQLDB)
+    watchers = db_conn.list_watchers()
+    for watcher in watchers:
+        WatcherThread(name=watcher[1], channel=watcher[2], currency_pair=watcher[3],
+                      output="sql").start()
+
+
+def get_all_watchers():
+    db_conn = SQL(SQLHOST, SQLUSER, SQLPASSWD, SQLDB)
+    return db_conn.list_watchers()
+
+
+def stop_all_watchers():
+    for t in threading.enumerate():
+        if isinstance(t, WatcherThread):
+            t.end(remove=False)
+            t.join()
+
+
 class WatcherThread(threading.Thread):
     def __init__(self, name, channel, currency_pair, output):
         super().__init__(name=name)
@@ -84,7 +104,6 @@ class WatcherThread(threading.Thread):
     def run(self):
         while self.running:
             try:
-
                 self.db_conn.create_watcher(self.getName(), self.channel, self.currency_pair)
                 # Open socket with server
                 ws = create_connection(URI)
@@ -104,8 +123,9 @@ class WatcherThread(threading.Thread):
                 print(f"ERROR: {type(e)} {e}")
                 break
 
-    def end(self):
-        self.db_conn.delete_watcher(self.getName())
+    def end(self, remove=True):
+        if remove:
+            self.db_conn.delete_watcher(self.getName())
         self.running = False
 
     def _check_currency_pair(self):
@@ -113,9 +133,6 @@ class WatcherThread(threading.Thread):
 
     def _check_channel(self):
         return False if self.channel not in VALID_CHANNELS else True
-
-    def _check_output(self):
-        return False if self.output not in VALID_OUTPUTS else True
 
     def _make_subscribe_json(self):
         subscription = {
@@ -159,9 +176,3 @@ class WatcherThread(threading.Thread):
             "type": trade_data["type"], "timestamp": trade_data["timestamp"]
         }
         self.db_conn.create_trade(sql_trade_data, self.currency_pair)
-
-    @staticmethod
-    def list_watchers():
-        print('test')
-
-
