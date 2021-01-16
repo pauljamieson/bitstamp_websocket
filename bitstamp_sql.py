@@ -1,5 +1,5 @@
 #####################################################################################
-# Filename       : bitstamp_websocket.py
+# Filename       : bitstamp_sql.py
 # Author         : Paul Jamieson
 # Created        : 01/06/2021
 # Edited         : 01/13/2021
